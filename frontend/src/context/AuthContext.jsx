@@ -180,11 +180,17 @@ export const AuthProvider = ({ children }) => {
       return { success: false, message: 'Google Sign-In is only available when Firebase is configured.' };
     }
     try {
-      await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider);
+      const idToken = await result.user.getIdToken(true);
+      await loadProfileWithToken(idToken);
       return { success: true };
     } catch (error) {
       console.error('Google Sign-In error:', error.message);
-      return { success: false, message: error.message || 'Google Sign-In failed.' };
+      const message = error.response?.status === 401
+        ? 'Google Sign-In worked, but the backend could not verify Firebase. Add FIREBASE_SERVICE_ACCOUNT_JSON to the backend environment and redeploy.'
+        : error.response?.data?.message || error.message || 'Google Sign-In failed.';
+
+      return { success: false, message };
     }
   };
 

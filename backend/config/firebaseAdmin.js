@@ -6,9 +6,10 @@ dotenv.config();
 
 const projectId = process.env.FIREBASE_PROJECT_ID || 'mock-project-id';
 const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
+const isProduction = process.env.NODE_ENV === 'production';
 
-// Auto-configure emulator host if no credentials file exists and not already set
-if (!serviceAccountPath && !process.env.FIREBASE_AUTH_EMULATOR_HOST) {
+// Auto-configure emulator only for local development.
+if (!isProduction && !serviceAccountPath && !process.env.FIREBASE_SERVICE_ACCOUNT_JSON && !process.env.FIREBASE_AUTH_EMULATOR_HOST) {
   process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099';
 }
 
