@@ -19,6 +19,20 @@ if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
     projectId: projectId,
   });
   console.log('🔧 Firebase Admin SDK initialized for Emulator. Host:', process.env.FIREBASE_AUTH_EMULATOR_HOST);
+} else if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+  try {
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+      projectId: projectId,
+    });
+    console.log('✅ Firebase Admin SDK initialized with service account JSON env variable.');
+  } catch (err) {
+    console.error('❌ Failed to parse FIREBASE_SERVICE_ACCOUNT_JSON env variable:', err.message);
+    admin.initializeApp({
+      projectId: projectId,
+    });
+  }
 } else {
   const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
   if (serviceAccountPath && fs.existsSync(serviceAccountPath)) {
