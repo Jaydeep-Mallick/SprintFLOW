@@ -79,10 +79,23 @@ export const AuthProvider = ({ children }) => {
           setUser(res.data);
         } catch (error) {
           console.error('Failed to load profile via Firebase:', error.message);
-          signOut(auth);
-          setUser(null);
-          setToken(null);
-          localStorage.removeItem('token');
+          // Only sign out on authentication errors, not network/server errors
+          // This prevents silent logouts when backend is starting up (Render cold start)
+          if (error.response?.status === 401 || error.code === 'auth/invalid-user-token') {
+            signOut(auth);
+            setUser(null);
+            setToken(null);
+            localStorage.removeItem('token');
+          } else {
+            // Keep firebase user session, set a minimal user object so dashboard loads
+            const fbUser = auth.currentUser;
+            setUser({
+              _id: fbUser?.uid,
+              name: fbUser?.displayName || fbUser?.email?.split('@')[0],
+              email: fbUser?.email,
+              role: 'Admin', // Optimistic role until backend responds
+            });
+          }
         }
       } else {
         setUser(null);
