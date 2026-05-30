@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth, API } from '../context/AuthContext';
 import {
@@ -9,10 +9,11 @@ import {
   Calendar,
   DollarSign,
   Users,
-  Compass,
-  CheckCircle,
+  UserPlus,
   Briefcase,
   AlertCircle,
+  Mail,
+  KeyRound,
   X,
   Target
 } from 'lucide-react';
@@ -28,6 +29,7 @@ const Projects = () => {
   // Modals Toggles
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [showSprintModal, setShowSprintModal] = useState(false);
+  const [showClientModal, setShowClientModal] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   
@@ -41,6 +43,12 @@ const Projects = () => {
   const [projPriority, setProjPriority] = useState('Medium');
   const [projStatus, setProjStatus] = useState('Planning');
   const [projTeam, setProjTeam] = useState([]);
+
+  // Client Form State
+  const [clientName, setClientName] = useState('');
+  const [clientEmail, setClientEmail] = useState('');
+  const [clientPassword, setClientPassword] = useState('');
+  const [clientError, setClientError] = useState('');
 
   // Sprint Form State
   const [sprintName, setSprintName] = useState('');
@@ -135,6 +143,33 @@ const Projects = () => {
       fetchData();
     } catch (error) {
       alert('Error saving project: ' + (error.response?.data?.message || error.message));
+    }
+  };
+
+  const handleOpenClientModal = () => {
+    setClientName('');
+    setClientEmail('');
+    setClientPassword('');
+    setClientError('');
+    setShowClientModal(true);
+  };
+
+  const handleSaveClient = async (e) => {
+    e.preventDefault();
+    setClientError('');
+
+    try {
+      const res = await API.post('/users', {
+        name: clientName,
+        email: clientEmail,
+        password: clientPassword,
+        role: 'Client',
+      });
+      setClients(prev => [...prev, res.data]);
+      setProjClient(res.data._id);
+      setShowClientModal(false);
+    } catch (error) {
+      setClientError(error.response?.data?.message || error.message);
     }
   };
 
@@ -460,15 +495,25 @@ const Projects = () => {
                       className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-400 focus:outline-none disabled:opacity-75"
                     />
                   ) : (
-                    <select
-                      required
-                      value={projClient}
-                      onChange={(e) => setProjClient(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-100 focus:outline-none"
-                    >
-                      <option value="">Select Client</option>
-                      {clients.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
-                    </select>
+                    <div className="flex gap-2">
+                      <select
+                        required
+                        value={projClient}
+                        onChange={(e) => setProjClient(e.target.value)}
+                        className="min-w-0 flex-1 px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-100 focus:outline-none"
+                      >
+                        <option value="">Select Client</option>
+                        {clients.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={handleOpenClientModal}
+                        className="px-3 py-2 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 rounded-lg transition-all"
+                        title="Add Client"
+                      >
+                        <UserPlus size={16} />
+                      </button>
+                    </div>
                   )}
                 </div>
                 <div className="space-y-1">
@@ -595,6 +640,103 @@ const Projects = () => {
                   className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm shadow-md shadow-indigo-600/10 font-semibold"
                 >
                   Save Project
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* --- QUICK ADD CLIENT MODAL --- */}
+      {showClientModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowClientModal(false)}></div>
+          <div className="glass-panel w-full max-w-md bg-slate-950 p-6 z-10 space-y-6 relative animate-slide-up">
+            <button
+              onClick={() => setShowClientModal(false)}
+              className="absolute top-4 right-4 text-slate-500 hover:text-slate-300 border border-slate-900 p-1.5 rounded bg-slate-950"
+              title="Close"
+            >
+              <X size={16} />
+            </button>
+            <div className="border-b border-slate-900 pb-3 text-left">
+              <h3 className="text-xl font-bold text-white">Add Client</h3>
+              <p className="text-xs text-slate-500 mt-1">Create a client login and attach it to this project.</p>
+            </div>
+
+            <form onSubmit={handleSaveClient} className="space-y-4 text-left">
+              {clientError && (
+                <div className="flex items-center gap-3 p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg text-rose-400 text-xs">
+                  <AlertCircle size={15} />
+                  <span>{clientError}</span>
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-400">Client Name</label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500">
+                    <Users size={15} />
+                  </span>
+                  <input
+                    type="text"
+                    required
+                    value={clientName}
+                    onChange={(e) => setClientName(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-100 placeholder-slate-500 focus:outline-none"
+                    placeholder="e.g. Acme Operations"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-400">Email Address</label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500">
+                    <Mail size={15} />
+                  </span>
+                  <input
+                    type="email"
+                    required
+                    value={clientEmail}
+                    onChange={(e) => setClientEmail(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-100 placeholder-slate-500 focus:outline-none"
+                    placeholder="client@company.com"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-400">Temporary Password</label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500">
+                    <KeyRound size={15} />
+                  </span>
+                  <input
+                    type="password"
+                    required
+                    minLength={6}
+                    value={clientPassword}
+                    onChange={(e) => setClientPassword(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-100 placeholder-slate-500 focus:outline-none"
+                    placeholder="Minimum 6 characters"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-900 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowClientModal(false)}
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-400 rounded-lg text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-semibold"
+                >
+                  Add Client
                 </button>
               </div>
             </form>

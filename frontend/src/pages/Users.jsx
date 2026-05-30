@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth, API } from '../context/AuthContext';
-import { Plus, Edit2, Trash2, Search, X, User, ShieldAlert, KeyRound, Mail, CheckCircle } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, X, User, ShieldAlert, KeyRound, Mail, UserPlus } from 'lucide-react';
 
 const Users = () => {
   const { user: currentUser } = useAuth();
@@ -44,7 +44,7 @@ const Users = () => {
     }
   }, [location]);
 
-  const handleOpenUserModal = (u = null) => {
+  const handleOpenUserModal = (u = null, defaultRole = 'Developer') => {
     setError('');
     if (u) {
       setEditingUser(u);
@@ -56,7 +56,7 @@ const Users = () => {
       setEditingUser(null);
       setUserName('');
       setUserEmail('');
-      setUserRole('Developer');
+      setUserRole(defaultRole);
       setUserPassword('');
     }
     setShowUserModal(true);
@@ -143,13 +143,22 @@ const Users = () => {
             Manage user accounts, client linkages, developer team logs, and roles access parameters.
           </p>
         </div>
-        <button
-          onClick={() => handleOpenUserModal()}
-          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg shadow-lg font-medium flex items-center justify-center gap-2 text-sm transition-all shrink-0 active:translate-y-px"
-        >
-          <Plus size={16} />
-          <span>Add User Account</span>
-        </button>
+        <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+          <button
+            onClick={() => handleOpenUserModal(null, 'Client')}
+            className="px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-lg shadow-lg font-medium flex items-center justify-center gap-2 text-sm transition-all active:translate-y-px"
+          >
+            <UserPlus size={16} />
+            <span>Add Client</span>
+          </button>
+          <button
+            onClick={() => handleOpenUserModal()}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg shadow-lg font-medium flex items-center justify-center gap-2 text-sm transition-all active:translate-y-px"
+          >
+            <Plus size={16} />
+            <span>Add User Account</span>
+          </button>
+        </div>
       </div>
 
       {/* Search Toolbar */}
