@@ -7,7 +7,7 @@ const AuthContext = createContext(null);
 
 // Setup base URL for API requests
 export const API = axios.create({
-  baseURL: 'http://localhost:5001/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5001/api',
 });
 
 // Check if Firebase is actually configured with live credentials
