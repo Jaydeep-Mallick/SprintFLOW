@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { connectDB } from './config/db.js';
+import { getFirebaseAdminStatus } from './config/firebaseAdmin.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 
 // Route Imports
@@ -69,7 +70,11 @@ app.use('/analytics', analyticsRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'SprintFlow API is running smoothly' });
+  res.json({
+    status: 'OK',
+    message: 'SprintFlow API is running smoothly',
+    firebaseAdmin: getFirebaseAdminStatus(),
+  });
 });
 
 // Error Handling Middleware
