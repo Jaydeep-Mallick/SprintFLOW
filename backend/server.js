@@ -54,6 +54,19 @@ app.use('/api/tickets', ticketRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/analytics', analyticsRoutes);
 
+// Backward-compatible aliases for deployments that point the frontend at the
+// backend origin without the /api suffix.
+app.use('/auth', authRoutes);
+app.use('/users', userRoutes);
+app.use('/projects', projectRoutes);
+app.use('/sprints', sprintRoutes);
+app.use('/tasks', taskRoutes);
+app.use('/comments', commentRoutes);
+app.use('/timesheets', timesheetRoutes);
+app.use('/tickets', ticketRoutes);
+app.use('/notifications', notificationRoutes);
+app.use('/analytics', analyticsRoutes);
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'SprintFlow API is running smoothly' });

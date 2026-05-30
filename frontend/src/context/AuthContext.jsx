@@ -35,6 +35,28 @@ export const AuthProvider = ({ children }) => {
     tokenRef.current = token;
   }, [token]);
 
+  const setSession = (userToken, userData) => {
+    localStorage.setItem('token', userToken);
+    tokenRef.current = userToken;
+    setToken(userToken);
+    setUser(userData);
+  };
+
+  const clearSession = () => {
+    localStorage.removeItem('token');
+    tokenRef.current = null;
+    setToken(null);
+    setUser(null);
+  };
+
+  const loadProfileWithToken = async (userToken) => {
+    const res = await API.get('/auth/profile', {
+      headers: { Authorization: `Bearer ${userToken}` }
+    });
+    setSession(userToken, res.data);
+    return res.data;
+  };
+
   // Setup Axios token interceptor (only once)
   useEffect(() => {
     const interceptor = API.interceptors.request.use(
@@ -58,15 +80,10 @@ export const AuthProvider = ({ children }) => {
         const storedToken = localStorage.getItem('token');
         if (storedToken) {
           try {
-            const res = await API.get('/auth/profile', {
-              headers: { Authorization: `Bearer ${storedToken}` }
-            });
-            setUser(res.data);
+            await loadProfileWithToken(storedToken);
           } catch (error) {
             console.error('Failed to load local profile:', error.message);
-            localStorage.removeItem('token');
-            setToken(null);
-            setUser(null);
+            clearSession();
           }
         }
         setLoading(false);
@@ -111,10 +128,17 @@ export const AuthProvider = ({ children }) => {
           }
         }
       } else {
-        setUser(null);
-        setToken(null);
-        tokenRef.current = null;
-        localStorage.removeItem('token');
+        const storedToken = localStorage.getItem('token');
+        if (storedToken) {
+          try {
+            await loadProfileWithToken(storedToken);
+          } catch (error) {
+            console.error('Failed to load local profile:', error.message);
+            clearSession();
+          }
+        } else {
+          clearSession();
+        }
       }
       setLoading(false);
     });
@@ -123,6 +147,20 @@ export const AuthProvider = ({ children }) => {
   }, []); // Empty deps — runs ONCE on mount, no infinite loop
 
   const login = async (email, password) => {
+    try {
+      const res = await API.post('/auth/login', { email, password });
+      const { token: userToken, ...userData } = res.data;
+      setSession(userToken, userData);
+      return { success: true };
+    } catch (apiError) {
+      if (!isFirebaseConfigured) {
+        return {
+          success: false,
+          message: apiError.response?.data?.message || 'Login failed. Please check credentials.',
+        };
+      }
+    }
+
     if (isFirebaseConfigured) {
       try {
         await signInWithEmailAndPassword(auth, email, password);
@@ -133,20 +171,6 @@ export const AuthProvider = ({ children }) => {
           message = 'Login failed. Please check credentials.';
         }
         return { success: false, message };
-      }
-    } else {
-      try {
-        const res = await API.post('/auth/login', { email, password });
-        const { token: userToken, ...userData } = res.data;
-        localStorage.setItem('token', userToken);
-        setToken(userToken);
-        setUser(userData);
-        return { success: true };
-      } catch (error) {
-        return {
-          success: false,
-          message: error.response?.data?.message || 'Login failed. Please check credentials.',
-        };
       }
     }
   };
@@ -171,11 +195,8 @@ export const AuthProvider = ({ children }) => {
       } catch (error) {
         console.error('Logout error:', error.message);
       }
-    } else {
-      localStorage.removeItem('token');
-      setToken(null);
-      setUser(null);
     }
+    clearSession();
   };
 
   const forgotPassword = async (email) => {
