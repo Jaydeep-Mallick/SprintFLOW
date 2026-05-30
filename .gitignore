@@ -1,0 +1,30 @@
+# Dependency directories
+node_modules/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# OS metadata
+.DS_Store
+
+# Secrets & Environment configs
+.env
+.env.*
+*.env
+serviceAccountKey.json
+*serviceAccountKey.json
+firebase-service-account.json
+
+# Build directories
+dist/
+build/
+.next/
+out/
+
+# IDEs & editors
+.idea/
+.vscode/
+.gemini/
+.system_generated/
