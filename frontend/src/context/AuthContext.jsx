@@ -5,9 +5,16 @@ import { signInWithEmailAndPassword, signInWithPopup, signOut, onAuthStateChange
 
 const AuthContext = createContext(null);
 
+const getApiBaseUrl = () => {
+  const configuredUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+  const trimmedUrl = configuredUrl.replace(/\/+$/, '');
+
+  return trimmedUrl.endsWith('/api') ? trimmedUrl : `${trimmedUrl}/api`;
+};
+
 // Setup base URL for API requests
 export const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5001/api',
+  baseURL: getApiBaseUrl(),
 });
 
 // Check if Firebase is actually configured with live credentials
