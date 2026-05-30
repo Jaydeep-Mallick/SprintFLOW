@@ -22,7 +22,11 @@ export const connectDB = async () => {
     
     try {
       const { MongoMemoryServer } = await import('mongodb-memory-server');
-      mongoServer = await MongoMemoryServer.create();
+      mongoServer = await MongoMemoryServer.create({
+        binary: {
+          version: '7.0.5'
+        }
+      });
       const memoryUri = mongoServer.getUri();
       
       await mongoose.connect(memoryUri);
