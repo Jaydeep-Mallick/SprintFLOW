@@ -40,14 +40,23 @@ export const protect = async (req, res, next) => {
 
         // Auto-register the user if they don't exist yet (e.g. social login)
         if (!user && decoded.email) {
-          const generatedPassword = crypto.randomBytes(16).toString('hex');
-          user = await User.create({
-            name: decoded.name || decoded.email.split('@')[0],
-            email: decoded.email,
-            password: generatedPassword,
-            role: 'Admin', // Default role for self-registered users (Admin for testing)
-          });
-          console.log(`👤 Auto-registered new Firebase/Google user: ${user.name} (${user.email}) as Admin`);
+          try {
+            const generatedPassword = crypto.randomBytes(16).toString('hex');
+            user = await User.create({
+              name: decoded.name || decoded.email.split('@')[0],
+              email: decoded.email,
+              password: generatedPassword,
+              role: 'Admin', // Default role for self-registered users (Admin for testing)
+            });
+            console.log(`👤 Auto-registered new Firebase/Google user: ${user.name} (${user.email}) as Admin`);
+          } catch (createError) {
+            // Handle concurrent registration requests by fetching the newly created user
+            if (createError.code === 11000) {
+              user = await User.findOne({ email: decoded.email });
+            } else {
+              throw createError;
+            }
+          }
         } else if (user && decoded.name && user.name !== decoded.name) {
           // Sync name with Gmail/Firebase display name if it changed
           user.name = decoded.name;
