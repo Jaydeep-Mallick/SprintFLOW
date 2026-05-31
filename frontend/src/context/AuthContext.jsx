@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { auth, googleProvider } from '../config/firebase';
-import { signInWithEmailAndPassword, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, signOut, onAuthStateChanged, updateProfile } from 'firebase/auth';
 
 const AuthContext = createContext(null);
 
@@ -175,6 +175,52 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const register = async (name, email, password) => {
+    if (!name?.trim()) {
+      return { success: false, message: 'Please enter your name.' };
+    }
+
+    if (password.length < 6) {
+      return { success: false, message: 'Password must be at least 6 characters.' };
+    }
+
+    if (isFirebaseConfigured) {
+      try {
+        const result = await createUserWithEmailAndPassword(auth, email, password);
+        await updateProfile(result.user, { displayName: name.trim() });
+        const idToken = await result.user.getIdToken(true);
+        await loadProfileWithToken(idToken);
+        return { success: true };
+      } catch (error) {
+        let message = error.message;
+        if (error.code === 'auth/email-already-in-use') {
+          message = 'An account already exists with this email.';
+        } else if (error.code === 'auth/weak-password') {
+          message = 'Password must be at least 6 characters.';
+        } else if (error.code === 'auth/invalid-email') {
+          message = 'Please enter a valid email address.';
+        }
+        return { success: false, message };
+      }
+    }
+
+    try {
+      const res = await API.post('/auth/register', {
+        name: name.trim(),
+        email,
+        password,
+      });
+      const { token: userToken, ...userData } = res.data;
+      setSession(userToken, userData);
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Could not create account. Please try again.',
+      };
+    }
+  };
+
   const loginWithGoogle = async () => {
     if (!isFirebaseConfigured) {
       return { success: false, message: 'Google Sign-In is only available when Firebase is configured.' };
@@ -224,7 +270,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, loginWithGoogle, logout, forgotPassword, resetPassword, isFirebaseConfigured }}>
+    <AuthContext.Provider value={{ user, token, loading, login, register, loginWithGoogle, logout, forgotPassword, resetPassword, isFirebaseConfigured }}>
       {children}
     </AuthContext.Provider>
   );

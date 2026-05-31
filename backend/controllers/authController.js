@@ -41,6 +41,60 @@ export const loginUser = async (req, res, next) => {
   }
 };
 
+// @desc    Register user & get token
+// @route   POST /api/auth/register
+// @access  Public
+export const registerUser = async (req, res, next) => {
+  const { name, email, password } = req.body;
+
+  try {
+    if (!name || !email || !password) {
+      res.status(400);
+      throw new Error('Please provide name, email, and password');
+    }
+
+    if (password.length < 6) {
+      res.status(400);
+      throw new Error('Password must be at least 6 characters');
+    }
+
+    const userExists = await User.findOne({ email });
+
+    if (userExists) {
+      res.status(400);
+      throw new Error('An account already exists with this email');
+    }
+
+    const user = await User.create({
+      name,
+      email,
+      password,
+      role: 'Admin',
+    });
+
+    try {
+      await admin.auth().createUser({
+        uid: user._id.toString(),
+        email: user.email,
+        password,
+        displayName: user.name,
+      });
+    } catch (fbError) {
+      console.warn('Could not sync registered user to Firebase Auth:', fbError.message);
+    }
+
+    res.status(201).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      token: generateToken(user._id),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @desc    Get user profile
 // @route   GET /api/auth/profile
 // @access  Private
